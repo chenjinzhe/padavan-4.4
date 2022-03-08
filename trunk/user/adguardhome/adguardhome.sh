@@ -63,8 +63,8 @@ if [ ! -f "$adg_file" ] || [ ! -s "$adg_file" ] ; then
 	cat > "$adg_file" <<-\EEE
 bind_host: 0.0.0.0
 bind_port: 3030
-auth_name: adguardhome
-auth_pass: adguardhome
+auth_name: admin
+auth_pass: admin
 language: zh-cn
 rlimit_nofile: 0
 dns:
@@ -79,7 +79,7 @@ dns:
   ratelimit_whitelist: []
   refuse_any: true
   bootstrap_dns:
-  - 223.5.5.5
+  - 114.114.114.114
   all_servers: true
   allowed_clients: []
   disallowed_clients: []
@@ -90,7 +90,7 @@ dns:
   safebrowsing_enabled: false
   resolveraddress: ""
   upstream_dns:
-  - 223.5.5.5
+  - 114.114.114.114
 tls:
   enabled: false
   server_name: ""
@@ -122,19 +122,30 @@ clients: []
 log_file: ""
 verbose: false
 schema_version: 3
-
 EEE
 	chmod 755 "$adg_file"
 fi
 }
 
-
+dl_adg(){
+logger -t "AdGuardHome" "下载AdGuardHome"
+#wget --no-check-certificate -O /tmp/AdGuardHome.tar.gz https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.101.0/AdGuardHome_linux_mipsle.tar.gz
+curl -k -s -o /tmp/AdGuardHome/AdGuardHome --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/77160860/padavan-4.4@main/trunk/user/adguardhome/AdGuardHome
+if [ ! -f "/tmp/AdGuardHome/AdGuardHome" ]; then
+logger -t "AdGuardHome" "AdGuardHome下载失败，请检查是否能正常访问github!程序将退出。"
+nvram set adg_enable=0
+exit 0
+else
+logger -t "AdGuardHome" "AdGuardHome下载成功。"
+chmod 777 /tmp/AdGuardHome/AdGuardHome
+fi
+}
 
 start_adg(){
     mkdir -p /tmp/AdGuardHome
 	mkdir -p /etc/storage/AdGuardHome
 	if [ ! -f "/tmp/AdGuardHome/AdGuardHome" ]; then
-	cp /usr/bin/AdGuardHome /tmp/AdGuardHome/AdGuardHome
+	dl_adg
 	fi
 	getconfig
 	change_dns
